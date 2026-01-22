@@ -1,34 +1,32 @@
-from flask import Flask, render_template, request
-import joblib
+import streamlit as st
 import numpy as np
+import joblib
 
-app = Flask(__name__)
-
+# Load model
 model = joblib.load("model/breast_cancer_model.pkl")
-scaler = joblib.load("model/scaler.pkl")
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    prediction = None
+st.title("Breast Cancer Prediction System")
+st.write("⚠️ Educational use only. Not a medical diagnostic tool.")
 
-    if request.method == "POST":
-        features = [
-            float(request.form["radius"]),
-            float(request.form["texture"]),
-            float(request.form["perimeter"]),
-            float(request.form["area"]),
-            float(request.form["concavity"])
-        ]
+st.subheader("Enter Tumor Features")
 
-        features_scaled = scaler.transform([features])
-        result = model.predict(features_scaled)[0]
+radius_mean = st.number_input("Radius Mean", min_value=0.0)
+texture_mean = st.number_input("Texture Mean", min_value=0.0)
+perimeter_mean = st.number_input("Perimeter Mean", min_value=0.0)
+area_mean = st.number_input("Area Mean", min_value=0.0)
+smoothness_mean = st.number_input("Smoothness Mean", min_value=0.0)
 
-        prediction = "Benign" if result == 1 else "Malignant"
+if st.button("Predict"):
+    input_data = np.array([[radius_mean,
+                             texture_mean,
+                             perimeter_mean,
+                             area_mean,
+                             smoothness_mean]])
 
-    return render_template("index.html", prediction=prediction)
+    prediction = model.predict(input_data)
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
-
-
+    if prediction[0] == 1:
+        st.error("🔴 Prediction: Malignant")
+    else:
+        st.success("🟢 Prediction: Benign")
+ 
